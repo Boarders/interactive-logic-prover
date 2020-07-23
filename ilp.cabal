@@ -24,6 +24,7 @@ executable repl
     , vty
     , text
       ^>=1.2.3
+    , containers
 
   exposed-modules:
     Cursor
