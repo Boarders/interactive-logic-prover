@@ -32,6 +32,11 @@ lcInsert c LineCursor{..} = LineCursor before' lineAfter
   where
     before' = lineBefore `snoc` c
 
+lcAddWord :: Text -> LineCursor -> LineCursor
+lcAddWord wrd LineCursor{..} = LineCursor before' lineAfter
+  where
+    before' = lineBefore <> wrd
+
 
 lcPrev :: LineCursor -> LineCursor
 lcPrev LineCursor{..} = LineCursor before after
