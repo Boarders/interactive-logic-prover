@@ -1,5 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE RecordWildCards #-}
 
 module Main where
 
@@ -32,14 +33,14 @@ main = do
 data EdMode = EdOrd | EdSpec
 
 data EdState = EdState
-  { edText :: LineCursor
+  { edText :: DocCursor
   , edMode :: EdMode
   }
 
 initialState :: EdState
 initialState = EdState txt mode
   where
-    txt  = LineCursor mempty mempty
+    txt  = docEmpty
     mode = EdOrd
 
 
@@ -71,52 +72,53 @@ handleEvent edState@(EdState lc mode) =
 ctrlInput :: EdState -> Key -> EventM Text (Next EdState)
 ctrlInput edState@(EdState lc mode) =
   \case
-    KChar c | c == 'a'  -> mDo lcTextEnd
-    KChar c | c == 'e'  -> mDo lcTextStart
-    KChar c | c == 'k'  -> mDo lcDeleteAll
+    KChar c | c == 'a'  -> mDo (docEdLine lcTextEnd)
+    KChar c | c == 'e'  -> mDo (docEdLine lcTextStart)
+    KChar c | c == 'k'  -> mDo (docEdLine lcDeleteAll)
     key ->  normalInput edState key
   where
     mDo func = continue $ EdState (func lc) mode
 
 
 normalInput :: EdState -> Key -> EventM Text (Next EdState)
-normalInput edState@(EdState lc mode) =
+normalInput edState@(EdState doc mode) =
   \case
-    KChar c | c == '\\' -> continue $ EdState lc EdSpec    
-    KChar c -> mDo $ lcInsert c
-    KLeft   -> mDo lcPrev
-    KRight  -> mDo lcNext
-    KBS     -> mDo lcDeleteBack
-    KDel    -> mDo lcDeleteForward
+    KChar c | c == '\\' -> continue $ EdState doc EdSpec    
+    KChar c -> mDo $ (docEdLine (lcInsert c))
+    KLeft   -> mDo (docEdLine lcPrev)
+    KRight  -> mDo (docEdLine lcNext)
+    -- to do: handle these properly for doc type with no curr LC
+    KBS     -> mDo (docEdLine lcDeleteBack)
+    KDel    -> mDo (docEdLine lcDeleteForward)
     KEsc    -> halt edState
-    KEnter  -> halt edState
+    KEnter  -> mDo docNewLine 
     _ -> continue edState
   where
-    mDo func = continue $ EdState (func lc) mode    
+    mDo func = continue $ EdState (func doc) mode    
 
 specialInput :: EdState -> Key -> EventM Text (Next EdState)
 specialInput edState@(EdState lc mode) key =
   case key of
     KChar c ->
       case Map.lookup c specialInputMap of
-        Just spec -> mDo $ lcAddWord spec
+        Just spec -> mDo $ (docEdLine (lcAddWord spec))
         Nothing   -> normalInput (edState{edMode = EdOrd}) key
     _ -> normalInput edState key
   where
     mDo func = continue $ EdState (func lc) EdOrd
 
 draw :: EdState -> [Widget Text]
-draw (EdState lc mode) =
+draw (EdState doc mode) =
   let
     textWindow =
       borderWithLabel (withAttr "title" $ txt " Text")$
       viewport "editor" Both $
 --      Brick.centerLayer $
       visible $
+      drawDoc
+      doc
 --      padAll 1 $
 --      setAvailableSize (50, 50) $
-      showCursor (pack "cursor") (Location (lcTextWidth lc, 0)) $
-      txt (lcToText lc)
     helpWindow =
       borderWithLabel (withAttr "title" $ txt " Context")$
       vLimitPercent 30 $
@@ -127,6 +129,14 @@ draw (EdState lc mode) =
     [ textWindow <=> hBorder <=> helpWindow
     ]
 
+
+drawDoc :: DocCursor -> Widget Text
+drawDoc doc@DocCursor{..} =
+  showCursor (pack "cursor") (Location (lcTextWidth lc, docLineNo)) $
+  txt (docToText doc)
+  where
+    lc = docCurr
+    
 
 specialInputMap :: Map.Map Char Text
 specialInputMap =
