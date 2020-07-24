@@ -1,4 +1,5 @@
 {-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 module Cursor where
 
@@ -8,10 +9,30 @@ import Brick.Widgets.Core
 data DocCursor =
   DocCursor
   { docBefore :: Text
+  , docLineNo  :: Int
   , docCurr   :: LineCursor
   , docAfter  :: Text
   }
   deriving (Eq, Show)
+
+docEmpty :: DocCursor
+docEmpty =
+  DocCursor mempty 0 lcEmpty mempty
+
+docEdLine :: (LineCursor -> LineCursor) -> DocCursor -> DocCursor
+docEdLine lcFn docCursor@DocCursor{..}
+  = docCursor{docCurr = lcFn docCurr}
+
+docNewLine :: DocCursor -> DocCursor
+docNewLine DocCursor{..} = DocCursor before (docLineNo + 1) lcEmpty docAfter
+  where
+    before = (docBefore <> lcToText docCurr) `snoc` '\n'
+
+-- to do: doc delete dealing with start of line and with first line
+
+docToText :: DocCursor -> Text
+docToText DocCursor{..} =
+  docBefore <> (lcToText docCurr) <> docAfter
 
 data LineCursor =
   LineCursor
@@ -19,6 +40,10 @@ data LineCursor =
   , lineAfter  :: Text
   }
   deriving (Eq, Show)
+
+lcEmpty :: LineCursor
+lcEmpty = LineCursor mempty mempty
+
 
 lcTextWidth :: LineCursor -> Int
 lcTextWidth LineCursor{..} = textWidth lineBefore
@@ -57,13 +82,17 @@ lcNext LineCursor{..} = LineCursor before after
 lcDeleteBack :: LineCursor -> LineCursor
 lcDeleteBack LineCursor{..} = LineCursor before lineAfter
   where
-    before = Text.init lineBefore
+    before =
+      if Text.null lineBefore then mempty else
+        Text.init lineBefore
+        
 
 
 lcDeleteForward :: LineCursor -> LineCursor
 lcDeleteForward LineCursor{..} = LineCursor lineBefore after
   where
-    after = Text.tail after
+    after = if Text.null lineAfter then mempty else
+              Text.tail lineAfter
 
 
 lcTextStart :: LineCursor -> LineCursor
