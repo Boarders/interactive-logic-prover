@@ -67,7 +67,7 @@ handleEvent edState@(EdState lc mode) =
         _ -> continue edState
     _ -> continue edState
 
-    
+
 
 ctrlInput :: EdState -> Key -> EventM Text (Next EdState)
 ctrlInput edState@(EdState lc mode) =
@@ -83,7 +83,7 @@ ctrlInput edState@(EdState lc mode) =
 normalInput :: EdState -> Key -> EventM Text (Next EdState)
 normalInput edState@(EdState doc mode) =
   \case
-    KChar c | c == '\\' -> continue $ EdState doc EdSpec    
+    KChar c | c == '\\' -> continue $ EdState doc EdSpec
     KChar c -> mDo $ (docEdLine (lcInsert c))
     KLeft   -> mDo (docEdLine lcPrev)
     KRight  -> mDo (docEdLine lcNext)
@@ -91,10 +91,10 @@ normalInput edState@(EdState doc mode) =
     KBS     -> mDo (docEdLine lcDeleteBack)
     KDel    -> mDo (docEdLine lcDeleteForward)
     KEsc    -> halt edState
-    KEnter  -> mDo docNewLine 
+    KEnter  -> mDo docNewLine
     _ -> continue edState
   where
-    mDo func = continue $ EdState (func doc) mode    
+    mDo func = continue $ EdState (func doc) mode
 
 specialInput :: EdState -> Key -> EventM Text (Next EdState)
 specialInput edState@(EdState lc mode) key =
@@ -136,10 +136,9 @@ drawDoc doc@DocCursor{..} =
   txt (docToText doc)
   where
     lc = docCurr
-    
+
 
 specialInputMap :: Map.Map Char Text
 specialInputMap =
   Map.fromList
     [('i', "intros")]
-  

@@ -77,7 +77,7 @@ lcNext LineCursor{..} = LineCursor before after
     (before, after) =
       case uncons lineAfter of
         Just (c, af) -> (snoc lineBefore c, af)
-        Nothing      -> (lineBefore, lineAfter)        
+        Nothing      -> (lineBefore, lineAfter)
 
 lcDeleteBack :: LineCursor -> LineCursor
 lcDeleteBack LineCursor{..} = LineCursor before lineAfter
@@ -85,7 +85,6 @@ lcDeleteBack LineCursor{..} = LineCursor before lineAfter
     before =
       if Text.null lineBefore then mempty else
         Text.init lineBefore
-        
 
 
 lcDeleteForward :: LineCursor -> LineCursor
