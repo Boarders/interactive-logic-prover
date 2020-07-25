@@ -20,9 +20,9 @@ import qualified Data.Map as Map
 import Core.Parser
 import Core.Expression
 
-
-
 import Cursor
+import Highlight
+import Command
 
 main :: IO ()
 main = do
@@ -31,6 +31,7 @@ main = do
 
 
 data EdMode = EdOrd | EdSpec
+
 
 data EdState = EdState
   { edText :: DocCursor
@@ -42,6 +43,7 @@ initialState = EdState txt mode
   where
     txt  = docEmpty
     mode = EdOrd
+    commands = cmEmpty
 
 
 app :: App EdState () Text
@@ -49,7 +51,7 @@ app = App { appDraw = draw
           , appChooseCursor = showFirstCursor
           , appHandleEvent = handleEvent
           , appStartEvent = pure
-          , appAttrMap = \lc -> attrMap Vty.defAttr []
+          , appAttrMap = \lc -> edAttrMap
           }
 
 handleEvent :: EdState -> BrickEvent Text () -> EventM Text (Next EdState)
@@ -133,7 +135,7 @@ draw (EdState doc mode) =
 drawDoc :: DocCursor -> Widget Text
 drawDoc doc@DocCursor{..} =
   showCursor (pack "cursor") (Location (lcTextWidth lc, docLineNo)) $
-  txt (docToText doc)
+  renderText . docToText $ doc
   where
     lc = docCurr
 
@@ -142,3 +144,19 @@ specialInputMap :: Map.Map Char Text
 specialInputMap =
   Map.fromList
     [('i', "intros")]
+
+
+edAttrMap :: AttrMap
+edAttrMap =
+  attrMap globalDefault
+    [ ("checked", black `on` blue)
+    , ("var"    , black `on` white)
+    , ("keyword", red   `on` white)
+    ]
+    
+    
+
+
+
+globalDefault :: Attr
+globalDefault = black `on` white
