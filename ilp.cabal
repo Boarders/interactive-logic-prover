@@ -26,8 +26,10 @@ executable repl
       ^>=1.2.3
     , containers
 
-  exposed-modules:
+  other-modules:
     Cursor
+    Command
+    Highlight
 
 Library Core
 
