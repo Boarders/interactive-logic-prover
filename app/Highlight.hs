@@ -54,8 +54,8 @@ htRender =
     renderWord (t, ht) =
         withAttr (hlTypeToAttrName ht)
       $ txt t
-      
-    
+
+
 wsSplit :: Text -> [Either Text Text]
 wsSplit t@(Text arr off len)
   | Text.null t           = []
@@ -71,4 +71,3 @@ wsSplit t@(Text arr off len)
         | isSpace c = Right (Text arr (start+off) (n-start)) : loop n (n+d) True
         | otherwise = loop start (n+d) False
         where Iter c d = iter t n
-              
