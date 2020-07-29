@@ -29,8 +29,8 @@ type HighlightText = [(Text, HighlightType)]
 keywords :: [Text]
 keywords = ["intros", "cal", "alix"]
 
-renderText :: Text -> Widget Text
-renderText = htRender . textToHighlightText
+renderLines :: [Text] -> Widget Text
+renderLines =  vBox . fmap htRender . fmap textToHighlightText
 
 
 -- to do: handle new lines by doing lines and unlines outside
@@ -48,7 +48,7 @@ textToHighlightText = fmap (either handleWS highlight) . wsSplit
 
 htRender :: HighlightText -> Widget Text
 htRender =
-    Prelude.foldr (\(t,ht) acc -> (renderWord (t, ht)) <+> acc) emptyWidget
+    (<+> txt "\n") . (Prelude.foldr (\(t,ht) acc -> (renderWord (t, ht)) <+> acc) emptyWidget)
   where
     renderWord :: (Text, HighlightType) -> Widget Text
     renderWord (t, ht) =
