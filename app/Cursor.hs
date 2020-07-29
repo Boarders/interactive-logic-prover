@@ -1,17 +1,45 @@
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE PatternSynonyms#-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE DerivingStrategies #-}
+{-# LANGUAGE DeriveFunctor  #-}
+{-# LANGUAGE DeriveFoldable #-}
 
 module Cursor where
 
 import Data.Text as Text
 import Brick.Widgets.Core
+import Data.Foldable (toList)
+
+data Bwd a = Nil | Snoc (Bwd a) a
+  deriving stock Functor
+  deriving stock Foldable
+  deriving stock (Eq, Show)
+
+instance Semigroup (Bwd a) where
+  (<>) = undefined
+
+instance Monoid (Bwd a) where
+  mempty = Nil
+
+infixl 5 :|>
+pattern (:|>) :: Bwd a -> a -> Bwd a
+pattern xs :|> x <- Snoc xs x
+  where
+    xs :|> x = Snoc xs x
+{-# COMPLETE Nil, (:|>) #-}
+
+bwdToList :: Bwd a -> [a]
+bwdToList = toList
+
 
 data DocCursor =
   DocCursor
-  { docBefore :: Text
-  , docLineNo  :: Int
+  { docBefore :: Bwd Text
+  , docLineNo :: Int
   , docCurr   :: LineCursor
-  , docAfter  :: Text
+  , docAfter  :: [Text]
   }
   deriving (Eq, Show)
 
@@ -26,13 +54,16 @@ docEdLine lcFn docCursor@DocCursor{..}
 docNewLine :: DocCursor -> DocCursor
 docNewLine DocCursor{..} = DocCursor before (docLineNo + 1) lcEmpty docAfter
   where
-    before = (docBefore <> lcToText docCurr) `snoc` '\n'
+    before = (docBefore :|> lcToText docCurr)
 
 -- to do: doc delete dealing with start of line and with first line
 
-docToText :: DocCursor -> Text
-docToText DocCursor{..} =
-  docBefore <> (lcToText docCurr) <> docAfter
+docToLines :: DocCursor -> [Text]
+docToLines DocCursor{..} =
+  linesBefore <> [(lcToText docCurr)] <> docAfter
+  where
+    linesBefore = bwdToList docBefore
+    
 
 data LineCursor =
   LineCursor
@@ -85,6 +116,14 @@ lcDeleteBack LineCursor{..} = LineCursor before lineAfter
     before =
       if Text.null lineBefore then mempty else
         Text.init lineBefore
+
+docDeleteBack :: DocCursor -> DocCursor
+docDeleteBack DocCursor{..} =
+  let
+    LineCursor{..} = docCurr
+  in
+    undefined
+  
 
 
 lcDeleteForward :: LineCursor -> LineCursor
