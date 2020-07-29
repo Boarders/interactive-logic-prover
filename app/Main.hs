@@ -119,8 +119,6 @@ draw (EdState doc mode) =
       visible $
       drawDoc
       doc
---      padAll 1 $
---      setAvailableSize (50, 50) $
     helpWindow =
       borderWithLabel (withAttr "title" $ txt " Context")$
       vLimitPercent 30 $
@@ -135,7 +133,7 @@ draw (EdState doc mode) =
 drawDoc :: DocCursor -> Widget Text
 drawDoc doc@DocCursor{..} =
   showCursor (pack "cursor") (Location (lcTextWidth lc, docLineNo)) $
-  renderText . docToText $ doc
+  renderLines . docToLines $ doc
   where
     lc = docCurr
 
