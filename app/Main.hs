@@ -112,8 +112,15 @@ specialInput edState@(EdState lc mode) key =
 draw :: EdState -> [Widget Text]
 draw (EdState doc mode) =
   let
+    theoremWindow =
+      borderWithLabel (withAttr "title" $ txt "Claim")$
+      vLimitPercent 2 $
+      viewport "theorem" Both $
+      visible $
+      vBox $
+        [ txt "A → B → A ∧ B" ]
     textWindow =
-      borderWithLabel (withAttr "title" $ txt " Text")$
+      borderWithLabel (withAttr "title" $ txt "Proof")$
       viewport "editor" Both $
 --      Brick.centerLayer $
       visible $
@@ -124,9 +131,21 @@ draw (EdState doc mode) =
       vLimitPercent 30 $
       viewport "context" Both $
       visible $
-      txt ""
+      vBox $
+        [ (withAttr "subtitle" $ txt "Goals:")
+        , txt "  • A ∧ B "
+        , txt "\n"
+        , (withAttr "subtitle" $ txt "Context:")
+        , txt "  • a : A"
+        , txt "  • b : B"
+        ]
+
+      
   in
-    [ textWindow <=> hBorder <=> helpWindow
+    [    theoremWindow
+      <=> textWindow
+ --     <=> hBorder
+      <=> helpWindow
     ]
 
 
@@ -147,14 +166,55 @@ specialInputMap =
 edAttrMap :: AttrMap
 edAttrMap =
   attrMap globalDefault
-    [ ("checked", black `on` blue)
-    , ("var"    , black `on` white)
-    , ("keyword", red   `on` white)
+    [ ("checked" , textCol     `on` checkBackgroundCol)
+    , ("var"     , textCol     `on` backgroundCol)
+    , ("keyword" , keywordCol  `on` backgroundCol)
+    , ("title"   , titleCol    `on` backgroundCol)
+    , ("subtitle", subtitleCol `on` backgroundCol)
+    , (borderAttr, textCol     `on` borderCol)
     ]
-    
-    
 
 
 
 globalDefault :: Attr
-globalDefault = black `on` white
+globalDefault = textCol `on` backgroundCol
+
+-- colour scheme
+type Colour = Color
+
+textCol :: Colour
+textCol = richBlack
+
+backgroundCol :: Color
+backgroundCol = babyPowder
+
+checkBackgroundCol :: Color
+checkBackgroundCol = tiffanyBlue
+
+titleCol :: Color
+titleCol = orangePeel
+
+subtitleCol :: Color
+subtitleCol = tiffanyBlue
+
+keywordCol :: Color
+keywordCol = roseMadder
+
+borderCol :: Color
+borderCol = backgroundCol
+
+richBlack :: Colour
+richBlack = Vty.rgbColor 1 22 39
+
+babyPowder :: Colour
+babyPowder = Vty.rgbColor 253 255 252
+
+tiffanyBlue :: Colour
+tiffanyBlue = Vty.rgbColor 46 196 182
+
+roseMadder :: Colour
+roseMadder = Vty.rgbColor 231 29 54
+
+orangePeel :: Colour
+orangePeel = Vty.rgbColor 255 159 28
+
